@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* @property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+} */
+
+:root {
+  --clr-1: #052b2f;
+  --clr-2: #073438;
+  --clr-3: #0e4b50;
+  --clr-4: #2d8f85;
+  --clr-5: #637c54;
+}
+
+@layer components {
+  .generate-button {
+    position: relative;
+    z-index: 0;
+    overflow: hidden;
+    color: rgb(107 114 128);
+  }
+
+  .generate-button::before {
+    content: '';
+    position: absolute;
+    z-index: -2;
+    left: -50%;
+    top: -50%;
+    width: 200%;
+    height: 200%;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    background-size: 50% 50%, 50% 50%;
+    background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+    background-image: linear-gradient(var(--clr-3), var(--clr-3)), linear-gradient(var(--clr-4), var(--clr-4)), linear-gradient(var(--clr-5), var(--clr-5)), linear-gradient(var(--clr-3), var(--clr-3));
+    animation: rotate 4s linear infinite;
+  }
+
+  .generate-button::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: 2px;
+    top: 2px;
+    width: calc(100% - 4px);
+    height: calc(100% - 4px);
+    background: var(--clr-1);
+    border-radius: 5px;
+  }
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(1turn);
+  }
+}

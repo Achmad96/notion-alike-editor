@@ -1,21 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Eczar:wght@400..800&family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ::-webkit-scrollbar {
+  width: 3px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+::-webkit-scrollbar-track {
+  border-radius: 10px;
+  background: #cc0000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cc0000;
+  border-radius: 10px;
+  border: 3px solid #cc0000;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c0a0b9;
+} */
+
+/* @layer base {
+  ::selection {
+    background-color: #adb5bd;
   }
+} */
+
+@layer utilities {
+  .tiptap p.is-empty:first-child::before {
+    color: #828282;
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+
+  .editor-content {
+    caret-color: rgb(179, 179, 179) !important;
+  }
+
+  .editor-content p:not(.is-empty) {
+    text-indent: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* .ss-font {
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 500;
+    font-style: normal;
+  } */
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  [data-type='user'] {
+    color: rgb(179, 179, 179);
+    caret-color: rgb(179, 179, 179) !important;
+  }
+  [data-type='ai'] {
+    color: rgb(254, 243, 199);
+    caret-color: rgb(254, 243, 199) !important;
+  }
+  [data-type='edit'] {
+    color: rgb(209 250 229);
+    caret-color: rgb(209 250 229) !important;
+  }
 }
