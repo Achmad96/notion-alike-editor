@@ -38,7 +38,6 @@ const generateAIText = async (controller: AbortController, data: any, onStart: (
 
       // Decode the chunk and add it to our buffer
       buffer += decoder.decode(value, { stream: true });
-      console.log(buffer);
 
       // Process complete lines in the buffer
       const lines = buffer.split('\n');

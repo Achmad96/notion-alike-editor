@@ -9,6 +9,18 @@ import { EditorView } from '@tiptap/pm/view';
 import { useNovelConfig } from '@/hooks/useNovelConfig';
 import { generateAIText } from '@/lib/NovelService';
 import { EditorExtensions } from '@/extensions';
+import TextStyle from '@tiptap/extension-text-style';
+import Placeholder from '@tiptap/extension-placeholder';
+import Highlight from '@tiptap/extension-highlight';
+
+import PreventCursorMovementPlugin from '@/extensions/CursorMovementExtension';
+import ColorPlugin from '@/extensions/ColorExtension';
+import AttributePlugin from '@/extensions/AttributeExtension';
+
+import { Color } from '@tiptap/extension-color';
+import { Extension } from '@tiptap/core';
+import StarterKit from '@tiptap/starter-kit';
+import { Markdown } from 'tiptap-markdown';
 import GenerateButton from '@/components/GenerateButton';
 
 import { slashCommand, suggestionItems } from '@/components/slash-command';
@@ -17,23 +29,34 @@ type PreviousPromptType = {
   json: JSONContent | null;
   text: string;
 };
+const placeholder = 'Enter your ideas here...';
 
-const extensions = [...EditorExtensions, slashCommand];
 const NovelEditor = () => {
   let abortControllerRef = useRef<AbortController | null>(null);
+
   const [novelConfig, setNovelConfig] = useNovelConfig();
   const [generatingStatus, setGeneratingStatus] = useState<'generate' | 'regenerate' | null>(null);
   const [prevPrompt, setPrevPrompt] = useState<PreviousPromptType>({ json: null, text: '' });
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-  }, []);
-
   const editor = useEditor({
     immediatelyRender: false,
-    extensions,
+    extensions: [
+      StarterKit,
+      Markdown.configure({
+        html: true,
+        linkify: true,
+        transformCopiedText: true,
+        transformPastedText: true
+      }),
+      Color,
+      TextStyle,
+      AttributePlugin,
+      ColorPlugin,
+      Highlight.configure({ multicolor: true }) as Extension,
+      PreventCursorMovementPlugin.configure({ isGenerating: false }),
+      Placeholder.configure({ placeholder, emptyEditorClass: 'is-empty', emptyNodeClass: 'is-empty' }),
+      slashCommand
+    ],
     editorProps: {
       attributes: { class: 'editor-content text-white h-auto min-h-dvh w-full max-w-full ss-font focus:border-none focus:outline-none text-lg p-3 overflow-y-auto' },
       handlePaste: (view: EditorView, event: ClipboardEvent, slice: Slice) => {
@@ -76,86 +99,39 @@ const NovelEditor = () => {
   const handleGenerate = async (isRegenerate: boolean = false) => {
     if (generatingStatus || !editor) return;
     const abortController = new AbortController();
-    let currentParagraph = '';
     abortControllerRef.current = abortController;
 
     const json = editor.getJSON();
     const text = editor.getText({ blockSeparator: '\n' });
     setPrevPrompt({ json, text });
 
-    const insertText = (text: string, createNewParagraph: boolean = false) => {
-      const chain = editor.chain().focus();
-
-      if (text) {
-        chain.insertContentAt(editor.state.selection.from, {
+    const handleToken = (token: string) => {
+      if (!token) return;
+      if (token.startsWith('\n')) {
+        editor.chain().focus().insertContent('</p><p>').run();
+      }
+      if (token.endsWith('\n')) {
+        editor
+          .chain()
+          .focus()
+          .insertContentAt(editor.state.selection.from, {
+            marks: [{ type: 'textStyle', attrs: { type: 'ai' } }],
+            type: 'text',
+            text: token.slice(0, -1)
+          })
+          .insertContent('</p><p>')
+          .run();
+        return;
+      }
+      editor
+        .chain()
+        .focus()
+        .insertContentAt(editor.state.selection.from, {
           marks: [{ type: 'textStyle', attrs: { type: 'ai' } }],
           type: 'text',
-          text
-        });
-      }
-
-      if (createNewParagraph) {
-        chain.insertContent('<p></p>');
-      }
-
-      chain.run();
-    };
-
-    const handleToken = (token: string) => {
-      // Case 1: Token is just a newline
-      if (token === '\n') {
-        if (currentParagraph) {
-          insertText(currentParagraph, true);
-        } else {
-          insertText('', true);
-        }
-        currentParagraph = '';
-        return;
-      }
-
-      // Case 2: Token starts with newline
-      if (token.startsWith('\n')) {
-        if (currentParagraph) {
-          insertText(currentParagraph, true);
-          currentParagraph = '';
-        }
-        currentParagraph = token.slice(1);
-        insertText(currentParagraph);
-        return;
-      }
-
-      // Case 3: Token ends with newline
-      if (token.endsWith('\n')) {
-        const textContent = token.slice(0, -1); // Remove the trailing \n
-        currentParagraph = '';
-        currentParagraph += textContent;
-        insertText(currentParagraph, true);
-        currentParagraph = '';
-        return;
-      }
-
-      // Case 4: Token contains newline in the middle
-      if (token.includes('\n')) {
-        const [firstPart, ...rest] = token.split('\n');
-        currentParagraph += firstPart;
-        insertText(currentParagraph, true);
-
-        // Handle remaining parts
-        const lastPart = rest.pop() || '';
-        rest.forEach((part) => {
-          insertText(part, true);
-        });
-
-        currentParagraph = lastPart;
-        if (currentParagraph) {
-          insertText(currentParagraph);
-        }
-        return;
-      }
-
-      // Case 5: Regular token without newline
-      currentParagraph += token;
-      insertText(token);
+          text: token
+        })
+        .run();
     };
 
     try {
@@ -220,18 +196,6 @@ const NovelEditor = () => {
                 })}
               </EditorCommandList>
             </EditorCommand>
-            {/* <GenerativeMenuSwitch open={openAI} onOpenChange={setOpenAI} editor={editor}>
-              <Separator orientation="vertical" />
-              <NodeSelector open={openNode} onOpenChange={setOpenNode} editor={editor} />
-              <Separator orientation="vertical" />
-              <LinkSelector open={openLink} onOpenChange={setOpenLink} editor={editor} />
-              <Separator orientation="vertical" />
-              <MathSelector editor={editor} />
-              <Separator orientation="vertical" />
-              <TextButtons editor={editor} />
-              <Separator orientation="vertical" />
-              <ColorSelector open={openColor} onOpenChange={setOpenColor} editor={editor} />
-            </GenerativeMenuSwitch> */}
           </EditorContent>
         </EditorRoot>
       </div>
