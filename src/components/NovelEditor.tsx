@@ -123,6 +123,24 @@ const NovelEditor = () => {
           .run();
         return;
       }
+      if (token.includes('\n')) {
+        const parts = token.split('\n');
+        parts.forEach((part, index) => {
+          if (index > 0) {
+            editor.chain().focus().insertContent('</p><p>').run();
+          }
+          editor
+            .chain()
+            .focus()
+            .insertContentAt(editor.state.selection.from, {
+              marks: [{ type: 'textStyle', attrs: { type: 'ai' } }],
+              type: 'text',
+              text: part
+            })
+            .run();
+        });
+        return;
+      }
       editor
         .chain()
         .focus()

@@ -46,11 +46,11 @@
     margin-bottom: 0.5rem;
   }
 
-  /* .ss-font {
+  .ss-font {
     font-family: 'Source Sans 3', sans-serif;
     font-weight: 500;
     font-style: normal;
-  } */
+  }
 }
 
 @layer utilities {
